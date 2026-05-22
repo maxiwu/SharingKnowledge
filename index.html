@@ -118,6 +118,7 @@
   section:nth-child(4) { animation-delay: 0.4s; }
   section:nth-child(5) { animation-delay: 0.5s; }
   section:nth-child(6) { animation-delay: 0.6s; }
+  section:nth-child(7) { animation-delay: 0.7s; }
 
   .section-label {
     font-family: var(--mono);
@@ -458,7 +459,124 @@
     line-height: 1.8;
   }
 
-  /* ── ANIMATIONS ── */
+  /* ── APPENDIX ── */
+  .appendix-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .appendix-badge {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 0.3rem 0.7rem;
+    flex-shrink: 0;
+  }
+
+  .criteria-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .criteria-group {
+    border: 1px solid var(--rule);
+    padding: 1.4rem 1.6rem;
+  }
+
+  .criteria-group h3 {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .criteria-group ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .criteria-group li {
+    font-size: 0.87rem;
+    color: var(--ink);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    line-height: 1.5;
+  }
+
+  .criteria-group li::before {
+    content: '◆';
+    color: var(--accent2);
+    font-size: 0.45rem;
+    flex-shrink: 0;
+    margin-top: 0.45rem;
+  }
+
+  .litmus-box {
+    margin-top: 1.5rem;
+    border: 1px solid var(--accent2);
+    background: rgba(47, 111, 200, 0.04);
+    padding: 1.4rem 1.6rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: start;
+  }
+
+  .litmus-icon {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    padding: 0.3rem 0.6rem;
+    white-space: nowrap;
+    margin-top: 0.15rem;
+  }
+
+  .litmus-box h3 {
+    font-family: var(--serif);
+    font-size: 1rem;
+    font-weight: 400;
+    margin-bottom: 0.35rem;
+  }
+
+  .litmus-box p {
+    font-size: 0.87rem;
+    color: var(--muted);
+    margin: 0;
+    max-width: none;
+  }
+
+  .litmus-box .litmus-q {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--ink);
+    font-style: italic;
+    margin-top: 0.6rem;
+    padding: 0.7rem 1rem;
+    background: white;
+    border-left: 2px solid var(--accent2);
+  }
+
+  @media (max-width: 620px) {
+    .criteria-grid { grid-template-columns: 1fr; }
+    .litmus-box { grid-template-columns: 1fr; }
+  }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -719,6 +837,63 @@
       <div class="problem-cell">
         <div class="cell-label">Resource Escalation Path</div>
         <p>When domain expert or code owner availability blocks progress, the manager is the escalation point to resolve the resource constraint.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule" />
+
+  <!-- APPENDIX -->
+  <section>
+    <div class="appendix-header">
+      <span class="appendix-badge">Appendix A</span>
+      <div class="section-label" style="margin:0;">ADR Sign-off & Architecture Call — Eligibility Criteria</div>
+    </div>
+    <h2>Who Should Make the Architecture Call</h2>
+    <p>The ADR sign-off role requires judgment, not just seniority. This checklist gives managers an objective basis for assigning the role per module — and for evaluating candidates before that assignment is made.</p>
+    <p>A person qualifies if they can demonstrate <strong>most</strong> of the following across all four categories. The standard is not perfection — it is demonstrated capability.</p>
+
+    <div class="criteria-grid">
+      <div class="criteria-group">
+        <h3>Module Knowledge</h3>
+        <ul>
+          <li>Has worked directly in this module or its dependencies in the last 6 months</li>
+          <li>Can explain why key design decisions in the module were made — not just what they do</li>
+          <li>Knows where the module's boundaries are and what it should not own</li>
+        </ul>
+      </div>
+      <div class="criteria-group">
+        <h3>Problem Recognition</h3>
+        <ul>
+          <li>Can look at two implementations and explain the tradeoff — not just which looks cleaner</li>
+          <li>Can identify when a fix solves the symptom versus the cause</li>
+          <li>Has caught a design issue during code review that would later have caused a bug</li>
+        </ul>
+      </div>
+      <div class="criteria-group">
+        <h3>Communication</h3>
+        <ul>
+          <li>Can explain a technical decision to a non-technical stakeholder without losing accuracy</li>
+          <li>Can document a decision clearly enough that a new developer understands it 6 months later</li>
+          <li>Has done this before — there is evidence, not just self-assessment</li>
+        </ul>
+      </div>
+      <div class="criteria-group">
+        <h3>Judgment Under Uncertainty</h3>
+        <ul>
+          <li>When they don't know something, they say so — and find out before deciding</li>
+          <li>Has changed their position when presented with better evidence</li>
+          <li>Does not default to "keep it simple" as a reason to avoid necessary complexity</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="litmus-box">
+      <div class="litmus-icon">Litmus Test</div>
+      <div>
+        <h3>One Question to Evaluate a Candidate</h3>
+        <p>Before assigning the ADR sign-off role, ask the candidate this question about the module in question. The answer reveals module knowledge, design thinking, and communication ability in a single response.</p>
+        <div class="litmus-q">"Look at this module. Where is the highest risk if we refactor it — and why?"</div>
       </div>
     </div>
   </section>
