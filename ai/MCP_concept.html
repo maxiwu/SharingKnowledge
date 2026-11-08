@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP 概念圖解筆記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f5f0;--card:#ffffff;--fg:#1f1d1a;--muted:#6b665e;--box:#ffffff;--accent:#c4552b;--accentSoft:#fbe9e1;--warn:#a16207;--warnSoft:#fdf4dc;--line:#cfc9bd}
+@media (prefers-color-scheme:dark){:root{--bg:#171614;--card:#201f1c;--fg:#ece8e1;--muted:#a49d92;--box:#282622;--accent:#f08a5d;--accentSoft:#3a2a22;--warn:#e0b04a;--warnSoft:#33291a;--line:#45413a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans TC",system-ui,sans-serif;line-height:1.7}
+main{max-width:900px;margin:0 auto;padding:40px 20px 80px}
+header h1{font-size:30px;margin:0 0 6px}
+header p{color:var(--muted);margin:0 0 12px}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px}
+nav a{font-size:14px;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 12px;background:var(--card)}
+nav a:hover{border-color:var(--accent);color:var(--accent)}
+h2{font-size:21px;margin:48px 0 4px;padding-top:8px;border-top:2px solid var(--fg)}
+h2 span{color:var(--accent);margin-right:8px}
+.secnote{color:var(--muted);margin:0 0 8px;font-size:15px}
+figure{margin:22px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 18px 14px}
+figure h3{font-size:16px;margin:0 0 10px}
+figure h3 small{color:var(--muted);font-weight:400;margin-right:6px}
+figcaption{font-size:14.5px;color:var(--fg);margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+svg{display:block;width:100%;height:auto;color:var(--fg);font-size:13px;font-family:inherit}
+svg text{fill:currentColor}
+.b rect{fill:var(--box);stroke:currentColor;stroke-width:1.2}
+.b.hl rect{stroke:var(--accent);fill:var(--accentSoft);stroke-width:1.8}
+.b.warn rect{stroke:var(--warn);fill:var(--warnSoft);stroke-width:1.5}
+.b.dash rect{stroke-dasharray:5 4}
+.zone rect{fill:none;stroke:var(--muted);stroke-dasharray:6 5;stroke-width:1.1}
+.small{font-size:11.5px;fill:var(--muted)}
+.ttl{font-weight:700;font-size:13.5px}
+.lab{font-size:11.5px;paint-order:stroke;stroke:var(--card);stroke-width:5px;stroke-linejoin:round}
+.a{stroke:currentColor;stroke-width:1.3;fill:none}
+.thin{stroke:var(--muted);stroke-width:1}
+.life{stroke:var(--line);stroke-width:1.2;stroke-dasharray:4 4}
+svg .hlt{fill:var(--accent);font-weight:700}
+svg .warnt{fill:var(--warn);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td.mid{color:var(--muted);text-align:center;width:28px}
+tr.extra td{color:var(--warn)}
+.summary{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:14px 18px;margin-top:20px}
+.summary li{margin:4px 0}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>MCP 概念圖解筆記</h1>
+<p>從傳統 API 一步步走到 MCP：角色分工、server 設計、架構取捨與傳輸方式。每個概念一張圖。</p>
+<nav id="toc"></nav>
+</header>
+<div id="content"></div>
+<div class="summary">
+<strong>一句話總結</strong>
+<ul>
+<li><b>模型</b>只讀 schema、輸出「想呼叫什麼」；<b>Host</b> 組 context、把關、轉發並跑 agent loop；<b>MCP server</b> 提供 schema 並執行。</li>
+<li>Tool use 是「模型 ↔ app」，MCP 是「app ↔ 工具」；MCP 讓 adapter 寫一次就能到處接。</li>
+<li>好的 MCP tool 就是好的 use case：需要一致性的流程封裝在 server，需要判斷力的串接交給 host。</li>
+</ul>
+</div>
+</main>
+<script>
+let uid=0;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function lines(x,y,t,cls='',anchor='middle'){
+  const ls=String(t).split('\n'),lh=17,y0=y-(ls.length-1)*lh/2;
+  return `<text class="${cls}" text-anchor="${anchor}">`+ls.map((l,i)=>`<tspan x="${x}" y="${y0+i*lh}">${esc(l)}</tspan>`).join('')+`</text>`;
+}
+const T=(x,y,t,c='',a='middle')=>lines(x,y,t,c,a);
+const B=(x,y,w,h,t,c='')=>`<g class="b ${c}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7"/>${lines(x+w/2,y+h/2+4.5,t)}</g>`;
+const Z=(x,y,w,h,t='')=>`<g class="zone"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/></g>`+(t?lines(x+10,y+16,t,'small ttl','start'):'');
+const L=(x1,y1,x2,y2,c='a thin')=>`<line class="${c}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+function A(x1,y1,x2,y2,lab='',o={}){
+  return id=>{
+    let s=`<line class="a" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${o.dash?'stroke-dasharray="5 4"':''} marker-end="url(#${id})" ${o.both?`marker-start="url(#${id})"`:''}/>`;
+    if(lab){
+      const mx=(x1+x2)/2,my=(y1+y2)/2,h=Math.abs(x2-x1)>=Math.abs(y2-y1);
+      s+=lines(o.lx??(h?mx:mx+7),o.ly??(h?my-7:my+4),lab,'lab',o.a??(h?'middle':'start'));
+    }
+    return s;
+  };
+}
+function P(pts,lab,o={}){
+  return id=>`<polyline class="a" points="${pts.map(p=>p.join(',')).join(' ')}" ${o.dash?'stroke-dasharray="5 4"':''} marker-end="url(#${id})"/>`+(lab?lines(o.lx,o.ly,lab,'lab',o.a||'middle'):'');
+}
+function S(w,h,label,parts){
+  const id='m'+(++uid);
+  return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}"><defs><marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="currentColor"/></marker></defs>${parts.flat(Infinity).map(p=>typeof p==='function'?p(id):p).join('')}</svg>`;
+}
+function Seq(xs,names,top,gap,msgs,H){
+  const out=[];
+  xs.forEach(x=>out.push(L(x,42,x,H-8,'life')));
+  xs.forEach((x,i)=>out.push(B(x-58,10,116,32,names[i])));
+  msgs.forEach((m,i)=>{const y=top+i*gap;out.push(A(xs[m[0]],y,xs[m[1]],y,m[2],{dash:m[3]}));});
+  return out;
+}
+
+const SECTIONS=[
+{id:'evolution',title:'從 API 到 MCP',note:'背後通常還是 API；MCP 是那層 adapter，而且是標準化、可重複使用的 adapter。',figs:[
+{t:'四個階段的演進',cap:'理解 API 的角色從「人」換成「模型」，但執行的始終是程式。MCP 把中間那層程式（adapter）標準化。',
+svg:S(760,130,'從傳統 API 到 MCP 的四個階段',[
+B(5,20,140,90,'① 傳統 API\n人讀文件\n程式依邏輯呼叫'),
+B(205,20,140,90,'② Function calling\n模型讀 schema\n開發者的程式執行'),
+B(405,20,140,90,'③ 各自寫 adapter\n每個 app × 每個服務\n重複造輪子'),
+B(605,20,140,90,'④ MCP\nadapter 標準化\n寫一次、到處接','hl'),
+A(145,65,205,65,'LLM 出現'),A(345,65,405,65,'整合變多'),A(545,65,605,65,'標準化')])},
+{t:'N × M 變成 N + M',cap:'沒有標準時，每個 AI 應用都要替每個服務各寫一份 adapter；有了 MCP，服務寫一次 server、應用支援一次 MCP 就能互通，像 USB 一樣。',
+svg:S(760,210,'沒有標準需要九個 adapter，有 MCP 只需六個連接',[
+T(180,20,'沒有標準：3 × 3 = 9 個 adapter','ttl'),
+[0,1,2].map(i=>B(20,40+i*60,90,36,'AI app '+'ABC'[i])),
+[0,1,2].map(i=>B(250,40+i*60,90,36,'服務 '+(i+1))),
+[0,1,2].map(i=>[0,1,2].map(j=>L(110,58+i*60,250,58+j*60))),
+T(580,20,'有 MCP：3 + 3 = 6 個連接','ttl'),
+[0,1,2].map(i=>B(410,40+i*60,90,36,'AI app '+'ABC'[i])),
+B(545,40,40,156,'MCP','hl'),
+[0,1,2].map(i=>B(650,40+i*60,100,36,'MCP server '+(i+1))),
+[0,1,2].map(i=>L(500,58+i*60,545,58+i*60)),
+[0,1,2].map(i=>L(585,58+i*60,650,58+i*60))])}
+]},
+{id:'roles',title:'角色與分工',note:'LLM 不會主動連任何東西；host 才是串起一切的那一層。',figs:[
+{t:'整體分工：Host、LLM、MCP client／server',cap:'Host（claude.ai 或你的 app）組 context、跑 agent loop、把關並轉發；LLM 只輸出文字或 tool_use；每個 MCP server 由一個 MCP client 連線；server 背後用什麼協議都可以。',
+svg:S(760,315,'Host 介於使用者、LLM 與 MCP server 之間',[
+B(160,8,200,46,'LLM（Claude API）\n只輸出文字或 tool_use'),
+Z(120,90,290,215,''),T(130,298,'Host（claude.ai／你的 app）','small ttl','start'),
+A(260,54,260,118,'tool use',{both:1}),
+B(140,118,250,56,'agent loop\n組 context・把關・轉發','hl'),
+B(140,190,110,82,'connector 設定\n網址・授權'),
+B(270,190,120,32,'MCP client A'),B(270,240,120,32,'MCP client B'),
+B(10,160,80,40,'使用者'),A(90,180,120,180,'提問',{ly:170,lx:104}),
+B(470,190,130,32,'MCP server A'),B(470,240,130,32,'MCP server B'),
+A(390,206,470,206,'MCP',{both:1}),A(390,256,470,256,'MCP',{both:1}),
+T(697,180,'任意協議','small'),
+B(640,190,115,32,'Notion API'),B(640,240,115,32,'本機檔案'),
+A(600,206,640,206),A(600,256,640,256)])},
+{t:'Tool use 與 MCP 是不同的兩段',cap:'Tool use 解決「模型怎麼表達想用工具」，MCP 解決「工具怎麼用標準方式接到 app 上」。工具若就是 app 內的函式，可以完全不經 MCP。',
+svg:S(760,195,'tool use 在模型與 app 之間，MCP 在 app 與工具之間',[
+T(242,28,'模型 ↔ app','small'),T(517,28,'app ↔ 工具','small'),
+B(20,45,170,50,'模型（Claude API）'),B(295,45,170,50,'Application\n（host）','hl'),B(570,45,170,50,'MCP server'),
+A(190,70,295,70,'tool use',{both:1}),A(465,70,570,70,'MCP',{both:1}),
+B(295,145,170,40,'app 內的函式','dash'),A(380,95,380,145,'不經 MCP，直接呼叫')])},
+{t:'一次完整呼叫：「台北天氣如何？」',cap:'虛線是回應。從 LLM 收到 schema 到產生最終回答之間，host 可能重複多輪「問模型 → 執行工具 → 結果送回」，這就是 agent loop。',
+svg:S(760,450,'一次工具呼叫從使用者到天氣 API 再回來的完整順序',[
+Z(150,150,470,228,''),T(612,370,'agent loop（可能重複多次）','small ttl','end'),
+Seq([70,225,380,540,690],['使用者','Host','LLM','MCP server','天氣 API'],75,32,[
+[1,3,'initialize・tools/list'],[3,1,'tool schema',1],[0,1,'台北天氣如何？'],
+[1,2,'訊息 + tool schema'],[2,1,'tool_use: get_weather',1],[1,3,'tools/call'],
+[3,4,'GET /weather'],[4,3,'25°C',1],[3,1,'result',1],[1,2,'tool_result'],
+[2,1,'最終回答',1],[1,0,'台北 25 度，晴',1]],450)])},
+{t:'Connector 只是 claude.ai 的叫法',cap:'MCP 規格裡沒有「connector」，只有 host、client、server。每個 host 用自己的方式記錄「要連哪個 server、怎麼連、用什麼授權」，同一個 server 不用改就能被它們接上。',
+svg:S(760,235,'三種 host 用不同名稱設定同一個 MCP server',[
+B(20,20,230,50,'claude.ai\n叫 connector'),B(20,95,230,50,'Claude 桌面版\n設定檔裡的 mcpServers'),B(20,170,230,50,'Claude Code\nclaude mcp add'),
+B(510,95,220,50,'同一個 MCP server','hl'),
+A(250,45,510,112),A(250,120,510,120,'MCP'),A(250,195,510,128)])},
+{t:'MCP client 與 HTTP client',cap:'MCP client 就像 app 裡的 HTTP client，但一個 server 對應一個 client，而且是有狀態的 session（先 initialize 協商版本與功能）。',
+svg:S(760,215,'MCP 一對一有狀態連線，HTTP client 一個打多個端點',[
+T(210,18,'MCP：一個 server 一個 client','ttl'),Z(10,30,200,170,'Host'),
+[0,1,2].map(i=>B(30,55+i*50,160,36,'MCP client '+'ABC'[i])),
+[0,1,2].map(i=>B(270,55+i*50,140,36,'MCP server '+'ABC'[i])),
+[0,1,2].map(i=>A(190,73+i*50,270,73+i*50,i?'':'session',{both:1})),
+T(600,18,'HTTP client：一個打多個','ttl'),Z(450,30,150,170,'App'),
+B(465,105,120,36,'HTTP client'),
+[0,1,2].map(i=>B(650,55+i*50,100,36,'API '+'ABC'[i])),
+[0,1,2].map(i=>A(585,123,650,73+i*50))])}
+]},
+{id:'server',title:'Server 內部與 tool 設計',note:'MCP server 是另一個 inbound adapter；好的 tool 就是好的 use case。',figs:[
+{t:'Server 怎麼觸發 glue code：依名稱路由',cap:'@mcp.tool() 把函式登記進註冊表，mcp.run() 收到 tools/call 後依 name 分派，和 Web 框架依路徑分派到 handler 是同一個模式（RPC 風格，而非 REST）。',
+svg:S(760,205,'MCP server 依工具名稱分派，對照 Web 框架依路徑分派',[
+T(10,24,'MCP server','ttl','start'),
+B(10,35,200,56,'{"method":"tools/call",\n "name":"get_weather"}'),B(260,35,150,56,'mcp.run()\n依 name 分派','hl'),B(460,35,150,56,'@mcp.tool()\nget_weather()'),B(650,35,100,56,'天氣 API'),
+A(210,63,260,63),A(410,63,460,63),A(610,63,650,63),
+T(10,124,'Web 框架（對照）','ttl','start'),
+B(10,135,200,56,'GET /weather?city=Taipei'),B(260,135,150,56,'Flask / FastAPI\n依路徑分派'),B(460,135,150,56,'@app.get()\nhandler'),B(650,135,100,56,'資料庫 / API'),
+A(210,163,260,163),A(410,163,460,163),A(610,163,650,163)])},
+{t:'六角架構：MCP server 是另一個 inbound adapter',cap:'業務邏輯留在 use case 與 domain。已有清楚 use case 層的系統，加 MCP 只是多寫一個薄 adapter；邏輯散在 controller 裡的系統就很痛苦。',
+svg:S(760,250,'MCP server 和 REST controller 並列為 inbound adapter，共用 use case',[
+T(60,22,'呼叫方','small'),T(220,22,'Inbound adapter','small'),T(665,48,'Outbound adapter','small'),
+B(10,40,100,40,'前端'),B(10,110,100,40,'AI host'),B(10,180,100,40,'排程 / CLI'),
+B(150,40,140,40,'REST controller'),B(150,110,140,40,'MCP server','hl'),B(150,180,140,40,'CLI 指令'),
+A(110,60,150,60),A(110,130,150,130),A(110,200,150,200),
+Z(340,25,200,210,'Application 層'),
+B(360,50,160,40,'use case：下訂單'),B(360,100,160,40,'use case：查訂單'),B(360,165,160,52,'Domain\n不變條件在這裡','dash'),
+A(290,60,340,60),A(290,130,340,130),A(290,200,340,200),
+B(590,60,150,40,'Repository → DB'),B(590,150,150,40,'外部 API client'),
+A(540,80,590,80),A(540,170,590,170)])},
+{t:'Deep vs Shallow：流程放在哪裡',cap:'固定順序、有副作用、需要一致性的流程，封裝成 deep tool 由程式保證；開放式探索、唯讀查詢則可以提供細粒度工具，讓模型自由組合。',
+svg:S(760,245,'shallow 工具讓模型串三步，deep 工具一次呼叫在同一交易內完成',[
+T(180,18,'Shallow：流程交給模型','ttl'),
+B(120,40,120,36,'模型'),
+B(15,140,105,36,'reserve_stock'),B(127,140,105,36,'create_order'),B(240,140,105,36,'charge'),
+A(160,76,67,140,'①'),A(180,76,180,140,'②'),A(200,76,292,140,'③'),
+T(180,210,'每步都可能出錯；中途失敗留下半套狀態','small warnt'),
+T(580,18,'Deep：流程留在程式','ttl'),
+B(520,40,120,36,'模型'),A(580,76,580,110,'一次呼叫'),
+B(505,110,150,36,'place_order','hl'),A(580,146,580,162),
+Z(415,162,330,58,''),
+B(430,175,90,32,'扣庫存'),B(535,175,90,32,'建訂單'),B(640,175,90,32,'扣款'),
+A(520,191,535,191),A(625,191,640,191),
+T(580,238,'同一個 use case・同一個交易','small')])},
+{t:'CQRS：Query tool 與 Command tool',cap:'MCP 的 tool annotations（readOnlyHint、destructiveHint、idempotentHint）其實就是在標註 command / query。對 LLM 來說這個區分還多了安全意義。',
+svg:S(760,230,'query 工具可自動執行，command 工具需確認並封裝一致性',[
+B(310,10,140,36,'模型'),
+B(70,90,240,50,'Query tools\nreadOnlyHint'),B(450,90,240,50,'Command tools\ndestructiveHint・idempotentHint','hl'),
+A(340,46,190,90,'查'),A(420,46,570,90,'改'),
+B(70,175,240,44,'host 可自動執行\n可拆細，讓模型探索'),B(450,175,240,44,'host 先請使用者確認\n封裝成 deep use case'),
+A(190,140,190,175),A(570,140,570,175)])}
+]},
+{id:'primitives',title:'Server 提供的三種東西',note:'Tools、Resources、Prompts 的差別在於「由誰決定要用」。',figs:[
+{t:'Tools／Resources／Prompts 由誰控制',cap:'Tools 由模型主動呼叫；Resources 是以 URI 識別的唯讀資料，由 app 或使用者放進 context；Prompts 是 server 提供的範本，由使用者選用。各 host 支援程度不同，tools 最普及。',
+svg:S(760,255,'三種原語分別由模型、app 或使用者、使用者決定',[
+[['模型決定','Tools\ntools/list・tools/call','command / query 動作','hl'],['App／使用者決定','Resources\nresources/read（URI）','放進 context 當背景資料',''],['使用者決定','Prompts\nprompts/get（範本）','展開成訊息交給模型','']].map((c,i)=>{const x=20+i*250;return [B(x,20,220,40,c[0]),B(x,100,220,60,c[1],c[3]),B(x,200,220,44,c[2]),A(x+110,60,x+110,100),A(x+110,160,x+110,200)];})])},
+{t:'Prompt 怎麼搭配 tool',cap:'Prompt 不是送給 tool 的參數，而是 server → 模型方向的文字：它告訴模型要做什麼、怎麼做，模型再透過 tools 實際執行。像服務方附上的標準作業流程。',
+svg:S(760,330,'使用者選 prompt 範本，server 回傳訊息，模型依指示再呼叫工具',[
+Seq([80,260,450,650],['使用者','Host','MCP server','模型'],80,36,[
+[0,1,'/review_pr 42'],[1,2,'prompts/get {pr: 42}'],[2,1,'展開好的訊息（SOP）',1],
+[1,3,'當作使用者訊息交給模型'],[3,1,'tool_use: get_pr_diff',1],[1,2,'tools/call'],[2,1,'diff 內容',1]],330),
+T(462,140,'← prompt：server 給模型的文字','small hlt','start'),
+T(462,282,'← tool：模型呼叫 server','small hlt','start')])}
+]},
+{id:'api',title:'在自己的 app 裡用 Claude API',note:'Claude API 是遠端模型；你的 app 就是 host。',figs:[
+{t:'三種做法',cap:'工具都在自己系統內 → ① 最簡單，不需要 MCP。要接現成 MCP server 或不想寫 loop → ② 或 ③。③ 由 Anthropic 端連遠端 server，本機 stdio server 不適用。',
+svg:S(760,255,'三種使用 Claude API 呼叫工具的方式',[
+[[25,'① 自己寫 tool use','工具就在 app 內',['Claude API','你的 app\n跑 agent loop','自己的函式'],['tool_use','呼叫'],[1,0]],
+ [105,'② Agent SDK','SDK 跑 loop、連 MCP',['Claude API','你的 app\n+ Agent SDK','MCP server'],['tool_use','MCP'],[1,0]],
+ [185,'③ MCP connector','Anthropic 端呼叫 server',['你的 app\n帶 token','Claude API\nMCP connector','遠端 MCP server'],['mcp_servers','MCP'],[0,0]]].map(r=>{const y=r[0];return [
+  T(10,y+21,r[1],'ttl','start'),T(10,y+40,r[2],'small','start'),
+  B(200,y,140,50,r[3][0]),B(410,y,140,50,r[3][1],'hl'),B(610,y,140,50,r[3][2]),
+  A(340,y+25,410,y+25,r[4][0],{both:r[5][0]}),A(550,y+25,610,y+25,r[4][1])];})])},
+{t:'用 API 存取 Notion：授權給的是你的 app',cap:'Claude API 每次請求都是獨立的，不會「記得」你授權過什麼。你的 app 透過 OAuth 取得使用者的 token，每次請求時帶上，並決定要開放哪些 MCP server。',
+svg:S(760,200,'使用者授權 app，app 帶 token 呼叫 Claude API，再經 Notion MCP 存取 Notion',[
+B(10,60,100,50,'使用者'),B(150,60,130,50,'你的 app\n保存 token','hl'),B(330,60,130,50,'Claude API\nMCP connector'),B(510,60,110,50,'Notion\nMCP server'),B(660,60,90,50,'Notion'),
+A(110,85,150,85,'① OAuth',{ly:48}),A(280,85,330,85,'② 請求 + token',{ly:48}),A(460,85,510,85,'③ tools/call',{ly:48}),A(620,85,660,85,'④ API',{ly:48}),
+P([[395,110],[395,140],[215,140],[215,110]],'⑤ 整理好的結果',{dash:1,lx:305,ly:157}),
+T(380,188,'授權給的是你的 app，不是 Claude','small hlt')])}
+]},
+{id:'arch',title:'架構取捨',note:'Agent 層級的 deep 會帶來和微服務很像的問題。',figs:[
+{t:'Agent 層層巢狀 vs 協調集中在 host',cap:'左：server 內部再放 LLM、再串 server，結果不確定、錯誤跨層累積、授權與除錯變難。右：server 只提供確定性 use case，需要隔離 context 時由 host 自己開 sub-agent。原則：樹的葉子用確定性程式，需要判斷力的節點才放模型。',
+svg:S(760,245,'巢狀 agent 架構與集中協調架構的對照',[
+T(185,16,'Agent 層層巢狀','ttl'),
+B(115,30,140,40,'Host（LLM）'),
+B(25,110,150,44,'Server（內含 LLM）','warn'),B(200,110,150,44,'Server（內含 LLM）','warn'),
+B(10,195,100,36,'Server（LLM）','warn'),B(125,195,80,36,'API'),B(230,195,100,36,'API'),
+A(160,70,100,110),A(210,70,275,110),A(70,154,60,195),A(130,154,165,195),A(275,154,280,195),
+T(580,16,'協調集中在 host','ttl'),
+B(500,30,160,40,'Host（LLM）','hl'),
+B(405,110,165,44,'sub-agent\nhost 開的，隔離 context','dash'),B(590,110,160,44,'MCP server\n確定性 use case'),
+B(405,195,165,36,'MCP server（確定性）'),B(590,195,160,36,'API / DB'),
+A(550,70,488,110,'委派'),A(610,70,670,110,'tool'),A(488,154,488,195),A(670,154,670,195)])},
+{t:'和微服務的問題對照',cap:'微服務的經驗大多能直接借用。多出來的是不確定性與「靜默錯誤」。最重要的一條也一樣：不要一開始就拆，先用單一 host + 確定性 MCP server。',
+html:`<table><thead><tr><th>微服務</th><th></th><th>Agent 樹</th></tr></thead><tbody>
+<tr><td>呼叫鏈越深，延遲與失敗機率越高</td><td class="mid">↔</td><td>每層多一輪推論，錯誤跨層累積</td></tr>
+<tr><td>分散式交易 → saga</td><td class="mid">↔</td><td>模型串接連固定補償流程都難保證</td></tr>
+<tr><td>Distributed tracing</td><td class="mid">↔</td><td>追蹤每層的 prompt、tool 呼叫與結果</td></tr>
+<tr><td>使用者身分一路傳遞（token exchange）</td><td class="mid">↔</td><td>使用者權限傳到底層，避免越權</td></tr>
+<tr><td>API 變更讓呼叫方壞掉</td><td class="mid">↔</td><td>tool 名稱或描述改了，模型行為悄悄改變</td></tr>
+<tr><td>Contract test</td><td class="mid">↔</td><td>Eval：固定測試案例檢查行為是否退化</td></tr>
+<tr><td>Timeout、冪等性</td><td class="mid">↔</td><td>步數／token／時間預算、可安全重試的 tool</td></tr>
+<tr class="extra"><td>出錯有例外、timeout、500</td><td class="mid">≠</td><td>出錯常是「看似合理的錯答案」，上層照單全收</td></tr>
+</tbody></table>`}
+]},
+{id:'transport',title:'傳輸方式與 IPC',note:'訊息格式固定，傳輸方式可選，背後協議隨意。',figs:[
+{t:'三層：訊息格式、傳輸、背後服務',cap:'MCP 訊息一律是 JSON-RPC 2.0；傳輸用 stdio（本機子程序）或 Streamable HTTP（遠端）。走 HTTP 也不等於 RESTful：所有請求打同一個 endpoint，靠 method 路由。',
+svg:S(760,180,'host 與 server 之間是 JSON-RPC，經 stdio 或 HTTP 傳輸，server 背後協議不限',[
+T(235,35,'訊息格式固定：JSON-RPC 2.0','small ttl'),T(545,35,'不受 MCP 限制','small ttl'),
+B(10,55,130,110,'Host'),B(330,55,140,110,'MCP server','hl'),B(620,55,130,110,'背後服務'),
+A(140,90,330,90,'stdio（本機子程序）',{both:1}),A(140,135,330,135,'Streamable HTTP（遠端）',{both:1}),
+A(470,80,620,80,'REST'),A(470,110,620,110,'gRPC'),A(470,140,620,140,'DB / 檔案')])},
+{t:'Blender MCP：兩段式 adapter',cap:'Blender 是使用者自己開、長時間運行的應用，MCP server 沒辦法用 stdio 接上它，只能透過 Blender 內 addon 開的 socket 遙控。前段是標準 MCP，後段是專案自訂格式。Godot 的實作多半類似（WebSocket／TCP）。',
+svg:S(760,150,'Claude 經 stdio 連 MCP server，MCP server 再經 socket 連 Blender 內的 addon',[
+T(205,40,'標準 MCP','small ttl'),T(447,40,'自訂格式','small warnt'),
+B(10,55,150,50,'Claude 桌面版\n（host）'),B(250,55,150,50,'MCP server\n（子程序）'),
+Z(480,20,270,120,'Blender（使用者自己開的）'),
+B(495,55,110,50,'addon\n開 TCP port','hl'),B(625,55,110,50,'Blender\nPython API'),
+A(160,80,250,80,'stdio',{both:1}),A(400,80,495,80,'socket',{both:1}),A(605,80,625,80)])},
+{t:'「Server」是角色，不是部署方式',cap:'在協議裡回應請求的一方就叫 server，和 LSP 的 language server 一樣。本機 stdio server 只服務啟動它的 host；遠端 HTTP server 才符合「多人共用服務」的一般印象。同一份程式換傳輸方式就能切換。',
+svg:S(760,195,'LSP 與 MCP stdio 是一對一子程序，MCP HTTP 是多對一',[
+B(60,25,120,36,'VS Code'),B(50,110,140,44,'Language server\n（子程序）'),A(120,61,120,110,'stdio',{both:1}),T(120,182,'LSP：1 對 1','small ttl'),
+B(320,25,120,36,'Claude 桌面版'),B(310,110,140,44,'MCP server\n（子程序）'),A(380,61,380,110,'stdio',{both:1}),T(380,182,'MCP stdio：1 對 1','small ttl'),
+B(530,25,60,36,'host'),B(600,25,60,36,'host'),B(670,25,60,36,'host'),
+B(560,110,140,44,'遠端 MCP server','hl'),
+A(560,61,600,110),A(630,61,630,110),A(700,61,660,110),T(630,182,'MCP HTTP：多對 1','small ttl')])},
+{t:'IPC 怎麼選：stdio、named pipe 還是其他',cap:'stdio 底層是 anonymous pipe，只能用在父子程序；named pipe 就是「可以用名字找到的 stdio」，能連到已在跑的程序、支援多個 client 與權限設定。這不是 Windows 特有的取捨，Linux 上對應的是 Unix domain socket。',
+svg:S(760,255,'依情境選擇 stdio、named pipe、視窗訊息或訊息佇列',[
+[['要連的是自己啟動的子程序？','stdio（底層是 anonymous pipe）\n例：MCP 本機 server','hl'],
+ ['要連已在跑的程序，或有多個 client？','Named pipe（Windows）／Unix socket\n例：背景服務、Blender addon（TCP）','hl'],
+ ['GUI 程式之間的事件通知？','視窗訊息\nSendMessage / PostMessage',''],
+ ['需要持久、非同步、跨機器？','訊息佇列\nMSMQ、RabbitMQ','']].map((r,i)=>{const y=20+i*60;return [B(10,y,330,44,r[0]),A(340,y+22,420,y+22,'是'),B(420,y,330,44,r[1],r[2])];})])}
+]}
+];
+
+let n=0,html='',toc='';
+SECTIONS.forEach((s,si)=>{
+  toc+=`<a href="#${s.id}">${si+1}. ${esc(s.title)}</a>`;
+  html+=`<h2 id="${s.id}"><span>${si+1}</span>${esc(s.title)}</h2><p class="secnote">${esc(s.note)}</p>`;
+  s.figs.forEach(f=>{n++;html+=`<figure><h3><small>圖 ${n}</small>${esc(f.t)}</h3>${f.svg||f.html}<figcaption>${esc(f.cap)}</figcaption></figure>`;});
+});
+document.getElementById('toc').innerHTML=toc;
+document.getElementById('content').innerHTML=html;
+</script>
+</body>
+</html>
